@@ -1,59 +1,46 @@
-package Interface_practice;
-interface Device{
-    int a=20;
-    // void gpu();
-    // void cpu();
-    // void processer();
-    // void ram();
-    void battery();
-    void speaker();
-    // void volumne();
-    void powerOn();
-    void powerOff();
-    // void restart();
+interface writingTools{
+    void writerName();
+    void writerTextColor();
+    void writeBodyType();
 }
-class JBL{
-    void bass(){
-        System.out.println("High JBL bass");
+class Pencil implements writingTools{
+    @Override
+    public void writerName() {
+        System.out.println("Pencil is writing");
     }
-    void tribble(){
-        System.out.println("High JBL bass");
+    @Override
+    public void writerTextColor() {
+        System.out.println("Black");
     }
-    void noise(){
-        System.out.println("High JBL bass");
+    @Override
+    public void writeBodyType() {
+        System.out.println("Wooden");
     }
 }
-class infinix_note_30_5g extends JBL implements Device{
+class Pen implements writingTools{
     @Override
-    public void battery() {
-        System.out.println("Battery is full");
+    public void writerName() {
+        System.out.println("Pen is writing");
     }
     @Override
-    public void powerOn() {
-        System.out.println("Power on");
-        
+    public void writerTextColor() {
+        System.out.println("Blue");
     }
     @Override
-    public void powerOff() {
-        System.out.println("Power on");
-        
-    }
-    @Override
-    public void speaker(){
-        bass();
-        noise();
-        tribble();
-    }
-    void useMobile(){
-        battery();
-        powerOn();
-        speaker();
+    public void writeBodyType() {
+        System.out.println("glass");
     }
 }
-public class practice_interface {
+public class practice_interface {    
     public static void main(String[] args) {
-        infinix_note_30_5g infinixNote305g=new infinix_note_30_5g();
-        infinixNote305g.useMobile();
-        System.out.println(Device.a);
+        writingTools pencil=new Pencil();
+        pencil.writerName();
+        pencil.writerTextColor();
+        pencil.writeBodyType();
+        System.out.println("--------------------");
+        writingTools pen=new Pen();
+        pen.writerName();
+        pen.writerTextColor();
+        pen.writeBodyType();
     }
 }
