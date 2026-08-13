@@ -1,31 +1,49 @@
-package abstract_practice;
-abstract class Vechicle{
-    abstract void drive();
-    void engine(){
-        System.out.println("Engine is ready");
+abstract class HappimaFriedRiceMix{
+    int boilTime=10;
+    void masala(){
+        System.out.println("fried rice masala");
     }
-    void fuel(){
-        System.out.println("fuel is full");
+    void pasmathiRice(){
+        System.out.println("pasmathi rice");
     }
+    void packet(){
+        pasmathiRice();
+    }
+    void foodReady(){System.out.println("Food is ready");}
+    abstract void getPan();
+    abstract void addWater();
+    abstract void boil();
+    abstract void addVegetables();
 }
-class Car extends Vechicle{
-    void drive(){
-        engine();
+class Cook extends HappimaFriedRiceMix{
+    @Override
+    void addWater() {
+        System.out.println("pour water");
     }
-    void breake(){
-        System.out.println("Breake is ready");
+    @Override
+    void addVegetables() {
+        System.out.println("ready vegetables");
     }
-    void accelator(){
-        System.out.println("accelator is ready");
+    @Override
+    void boil() {
+        System.out.println("wait 10 minutes");
     }
-    void clutch(){
-        System.out.println("accelator is ready");
+    @Override
+    void getPan() {
+        addWater();
+        packet();
+        addVegetables();
+        masala();
+    }
+    void cook(){
+        getPan();
+        boil();
+        foodReady();
     }
 }
 public class practice_abstract {
     public static void main(String[] args) {
-        Car car=new Car();
-        car.drive();
-        car.accelator();
+        Cook cook=new Cook();
+        cook.cook();
     }
 }
