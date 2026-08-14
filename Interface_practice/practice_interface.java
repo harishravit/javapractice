@@ -1,3 +1,5 @@
+package Interface_practice;
+
 interface writingTools{
     void writerName();
     void writerTextColor();
