@@ -3,12 +3,6 @@ abstract class HappimaFriedRiceMix{
     void masala(){
         System.out.println("fried rice masala");
     }
-    void pasmathiRice(){
-        System.out.println("pasmathi rice");
-    }
-    void packet(){
-        pasmathiRice();
-    }
     void foodReady(){System.out.println("Food is ready");}
     abstract void getPan();
     abstract void addWater();
@@ -31,7 +25,7 @@ class Cook extends HappimaFriedRiceMix{
     @Override
     void getPan() {
         addWater();
-        packet();
+       pasmathiRice();
         addVegetables();
         masala();
     }
@@ -39,6 +33,9 @@ class Cook extends HappimaFriedRiceMix{
         getPan();
         boil();
         foodReady();
+    }
+    void pasmathiRice(){
+        System.out.println("pasmathi rice");
     }
 }
 public class practice_abstract {
