@@ -31,9 +31,7 @@
     body {
       margin: 0;
       min-height: 100vh;
-      background:
-        radial-gradient(circle at 20% -10%, #ffffff 0%, transparent 45%),
-        var(--paper);
+      background: radial-gradient(circle at 20% -10%, #ffffff 0%, transparent 45%), var(--paper);
       font-family: var(--sans);
       color: var(--ink);
       display: flex;
@@ -237,7 +235,7 @@
       border-bottom: 1px solid var(--line);
       display: flex;
       justify-content: space-between;
-      align-items: flex-start;
+      align-items: center;
       gap: 12px;
       flex-wrap: wrap;
     }
@@ -253,6 +251,30 @@
       color: #5b6672;
       font-family: var(--mono);
       line-height: 1.6;
+    }
+
+    .right-info {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .photo-frame {
+      width: 80px;
+      height: 80px;
+      background: #f5f7f9;
+      border: 1px solid var(--line);
+      border-radius: 4px;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .student-photo {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
     }
 
     .result-head .sgpa-box {
@@ -343,7 +365,6 @@
       font-size: 0.95rem;
     }
 
-    /* Additional rule: U grade red highlight */
     .grade-mark.fail {
       color: var(--fail);
     }
@@ -426,9 +447,14 @@
           <p class="name" id="studentName">—</p>
           <div class="meta" id="studentMeta"></div>
         </div>
-        <div class="sgpa-box">
-          <div class="num" id="subjectCount">—</div>
-          <div class="lbl">Subjects</div>
+        <div class="right-info">
+          <div class="sgpa-box">
+            <div class="num" id="subjectCount">—</div>
+            <div class="lbl">Subjects</div>
+          </div>
+          <div class="photo-frame">
+            <img id="studentPhoto" class="student-photo" src="" alt="Student Photo">
+          </div>
         </div>
       </div>
 
@@ -455,6 +481,7 @@
 
   <script>
     let lastResult = null;
+    const defaultAvatar = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 24 24' fill='%239aa3ad'><path d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/></svg>";
 
     function pad2(v) {
       v = v.trim();
@@ -498,53 +525,28 @@
       showState('⏳', 'Fetching your result…', 'This usually takes a few seconds.');
 
       const apiUrl = `https://ac.egspgroup.in/ERP/api/coe/semester-exam/view-exam-result?regNo=${encodeURIComponent(regNo)}&dateOfBirth=${encodeURIComponent(dob)}&semesterExamId=108`;
-
       const proxyUrls = [
         `https://api.allorigins.win/raw?url=${encodeURIComponent(apiUrl)}`,
-        `https://corsproxy.io/?url=${encodeURIComponent(apiUrl)}`,
-        `https://thingproxy.freeboard.io/fetch/${apiUrl}`
+        `https://corsproxy.io/?url=${encodeURIComponent(apiUrl)}`
       ];
 
       let data = null;
-      let lastErr = null;
 
       for (const proxied of proxyUrls) {
         try {
-          const res = await fetch(proxied, { headers: { 'Accept': 'application/json' } });
-          if (!res.ok) {
-            lastErr = new Error('HTTP ' + res.status);
-            continue;
+          const res = await fetch(proxied);
+          if (res.ok) {
+            data = await res.json();
+            break;
           }
-          const text = await res.text();
-          try {
-            data = JSON.parse(text);
-          } catch (parseErr) {
-            lastErr = new Error('Non-JSON response from proxy');
-            continue;
-          }
-          break;
-        } catch (e) {
-          lastErr = e;
-        }
+        } catch (e) { }
       }
 
       btn.disabled = false;
       btn.textContent = 'Show Result';
 
-      if (!data) {
-        console.error(lastErr);
-        showState('🚫', 'Could not fetch result', 'Something went wrong reaching the result server — check your details, your internet connection, or try again shortly.');
-        return;
-      }
-
-      if (data.Message || data.error || data.Error) {
-        const serverMsg = data.Message || data.error || data.Error;
-        showState('❌', 'Result not found', typeof serverMsg === 'string' ? serverMsg : 'Please recheck your register number and date of birth.');
-        return;
-      }
-
-      if (!data.ExamResultSubjects || data.ExamResultSubjects.length === 0) {
-        showState('🧐', 'No result found', 'Check your register number and date of birth, then try again.');
+      if (!data || data.Message || data.error) {
+        showState('❌', 'Result not found', 'Please recheck your register number and date of birth.');
         return;
       }
 
@@ -559,6 +561,21 @@
       document.getElementById('studentMeta').innerHTML = metaParts.join('<br>');
       document.getElementById('subjectCount').textContent = data.ExamResultSubjects.length;
 
+      const photoImg = document.getElementById('studentPhoto');
+      const studentSeq = data.Student_Seq || data.StudentSeq || 0;
+
+      photoImg.onerror = function () {
+        this.onerror = null;
+        this.src = defaultAvatar;
+      };
+
+      if (studentSeq > 0) {
+        // Direct image assignment to bypass CORS fetch blocking
+        photoImg.src = `https://ac.egspgroup.in/ERP/api/User/Account/Photo/Student/${studentSeq}`;
+      } else {
+        photoImg.src = defaultAvatar;
+      }
+
       const tbody = document.getElementById('resultBody');
       tbody.innerHTML = '';
 
@@ -566,19 +583,18 @@
         const status = (subj.ResultStatus || '').trim().toUpperCase();
         const grade = (subj.GradeName || '').trim().toUpperCase();
 
-        // Grade "U" or Status "U" or "RA" - Fail condition check
         const isFail = status.includes('RA') || status.includes('U') || grade === 'U';
         const pillClass = isFail ? 'fail' : 'pass';
         const gradeClass = (grade === 'U' || status.includes('U')) ? 'fail' : '';
 
         const tr = document.createElement('tr');
         tr.innerHTML = `
-      <td class="sno center">${i + 1}</td>
-      <td class="code">${subj.SubjectCode || ''}</td>
-      <td>${subj.SubjectName || ''}</td>
-      <td class="center"><span class="status-pill ${pillClass}">${subj.ResultStatus || ''}</span></td>
-      <td class="center grade-mark ${gradeClass}">${subj.GradeName || ''}</td>
-    `;
+          <td class="sno center">${i + 1}</td>
+          <td class="code">${subj.SubjectCode || ''}</td>
+          <td>${subj.SubjectName || ''}</td>
+          <td class="center"><span class="status-pill ${pillClass}">${subj.ResultStatus || ''}</span></td>
+          <td class="center grade-mark ${gradeClass}">${subj.GradeName || ''}</td>
+        `;
         tbody.appendChild(tr);
       });
 
@@ -614,35 +630,12 @@
         head: [['S.No', 'Subject Code', 'Subject Name', 'Result Status', 'Grade']],
         body: rows,
         styles: { fontSize: 9, cellPadding: 3 },
-        headStyles: { fillColor: [16, 21, 28] },
-        didParseCell: function (hookData) {
-          if (hookData.section === 'body') {
-            const rawRow = lastResult.ExamResultSubjects[hookData.row.index];
-            const statusVal = (rawRow.ResultStatus || '').toString().toUpperCase();
-            const gradeVal = (rawRow.GradeName || '').toString().toUpperCase();
-            const isFailCell = statusVal.includes('U') || statusVal.includes('RA') || gradeVal === 'U';
-
-            if (hookData.column.index === 3 || hookData.column.index === 4) {
-              if (isFailCell) {
-                hookData.cell.styles.textColor = [179, 38, 30]; // Red
-                hookData.cell.styles.fontStyle = 'bold';
-              } else {
-                hookData.cell.styles.textColor = [26, 122, 61]; // Green
-                hookData.cell.styles.fontStyle = 'bold';
-              }
-            }
-          }
-        }
+        headStyles: { fillColor: [16, 21, 28] }
       });
 
       doc.save(`Result_${lastResult.RegNo || 'student'}.pdf`);
     }
-
-    document.getElementById('regNo').addEventListener('keydown', e => {
-      if (e.key === 'Enter') fetchResult();
-    });
   </script>
-
 </body>
 
 </html>
