@@ -1,5 +1,6 @@
-package atoz_Striver_DSA.Hashing;
-import java.util.*;
+package atoz_Striver_DSA.hashing;
+import java.util.HashMap;
+import java.util.Map;
 
 public class FindHiighAndLow {
     static void findHighAndLowFrq(int[] arr){
